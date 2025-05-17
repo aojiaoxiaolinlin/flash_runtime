@@ -20,7 +20,7 @@ mod error;
 pub mod filter;
 mod state_machine;
 
-type CompletionCallback = Box<dyn FnOnce() + Send + Sync + 'static>;
+type CompletionCallback = Box<dyn FnOnce(&mut AnimationPlayer) + Send + Sync + 'static>;
 type FrameEventCallback = Box<dyn Fn() + Send + Sync + 'static>;
 
 #[derive(Default)]
@@ -148,7 +148,7 @@ impl AnimationPlayer {
 
         // 触发完成事件
         if let Some(on_completion) = on_completion {
-            on_completion();
+            on_completion(self);
         }
     }
 
@@ -160,28 +160,27 @@ impl AnimationPlayer {
         self.animations.keys().collect::<Vec<_>>()
     }
 
+    pub fn set_on_completion(&mut self, on_completion: CompletionCallback) {
+        self.on_completion = Some(on_completion);
+    }
+
     /// 设置播放动画
     /// - name 动画名
     /// - looping 是否循环播放
     /// - on_completion 回调事件
-    pub fn set_play_animation(
-        &mut self,
-        name: &str,
-        looping: bool,
-        on_completion: Option<CompletionCallback>,
-    ) -> Result<()> {
+    pub fn set_play_animation(&mut self, name: &str, looping: bool) -> Result<()> {
         if !self.animations.contains_key(name) {
             return Err(RuntimeError::AnimationNotFound(name.to_owned()).into());
         }
 
         // 重置时间
         self.current_time = 0.0;
+        self.set_playing(true);
         // 清除活动实例
         self.active_instances.clear();
 
         self.current_animation_name = Some(name.to_owned());
         self.looping = looping;
-        self.on_completion = on_completion;
         Ok(())
     }
 

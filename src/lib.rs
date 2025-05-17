@@ -57,13 +57,10 @@ mod test {
             animations.children_clip,
             animations.meta.frame_rate,
         );
-        player.set_play_animation(
-            "default",
-            false,
-            Some(Box::new(|| {
-                println!("播放完成");
-            })),
-        )?;
+        player.set_on_completion(Box::new(|_player| {
+            println!("播放完成");
+        }));
+        player.set_play_animation("default", false)?;
 
         // player.register_frame_event("default", "attack".to_owned(), || {
         //     println!("触发attack事件");
